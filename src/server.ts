@@ -24,7 +24,10 @@ app.post('/api/chat/stream', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Query is required and must be a string' });
   }
 
-  console.log(`\n[Server] Received streaming request: "${query}"`);
+  console.log(`\n${'='.repeat(80)}`);
+  console.log(`[Server] ⚡ New SSE Request`);
+  console.log(`[Server] Query: "${query}"`);
+  console.log(`${'='.repeat(80)}`);
 
   // Set SSE headers
   res.setHeader('Content-Type', 'text/event-stream');
@@ -78,7 +81,8 @@ app.post('/api/chat/stream', async (req: Request, res: Response) => {
 
     res.write(`data: ${JSON.stringify(doneEvent)}\n\n`);
 
-    console.log('[Server] Stream completed successfully');
+    console.log(`\n[Server] ✓ Stream completed successfully`);
+    console.log(`${'='.repeat(80)}\n`);
 
   } catch (error) {
     console.error('[Server] Error during streaming:', error);

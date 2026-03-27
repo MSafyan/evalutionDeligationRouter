@@ -48,35 +48,45 @@ export class RAGAgent {
    * @returns RAG result with answer and references
    */
   async execute(query: string): Promise<RAGAgentResult> {
-    console.log(`\n[RAGAgent] Processing query: "${query}"`);
+    console.log(`\n[RAG] ━━━ Starting RAG Pipeline ━━━`);
+    console.log(`[RAG] Query: "${query}"`);
 
     try {
       // Step 1: Retrieve relevant documents from Weaviate
+      console.log(`[RAG] Step 1/4: Vector search`);
       const results = await weaviateService.vectorSearch(query, 3);
 
       if (results.length === 0) {
-        console.log('[RAGAgent] No relevant data found in database');
+        console.log('[RAG] ✗ No relevant data found');
         return {
           answer: "I couldn't find any relevant information in the knowledge base to answer your question. Please try rephrasing or ask about a different topic.",
           data: [],
         };
       }
 
+      console.log(`[RAG] ✓ Retrieved ${results.length} documents`);
+
       // Step 2: Group references by fileId
+      console.log(`[RAG] Step 2/4: Grouping references`);
       const groupedReferences = weaviateService.groupReferencesByFileId(results);
+      console.log(`[RAG] ✓ Grouped into ${groupedReferences.length} file refs`);
+      groupedReferences.forEach(ref => {
+        console.log(`[RAG]   File ${ref.fileId}: Pages ${ref.pageNumbers.join(', ')}`);
+      });
 
       // Step 3: Build context from retrieved documents
+      console.log(`[RAG] Step 3/4: Building context`);
       const context = results
         .map((result, index) => {
           return `Document ${index + 1} (File: ${result.fileId}, Pages: ${result.pageNumbers.join(', ')}):\n${result.answer}`;
         })
         .join('\n\n');
-
-      console.log(`[RAGAgent] Retrieved ${results.length} relevant documents`);
-      console.log(`[RAGAgent] Grouped into ${groupedReferences.length} file references`);
+      console.log(`[RAG] ✓ Context built (${context.length} chars)`);
 
       // Step 4: Generate answer using LLM with retrieved context
+      console.log(`[RAG] Step 4/4: LLM generation`);
       const answer = await this.generateAnswer(query, context, groupedReferences);
+      console.log(`[RAG] ✓ Answer generated (${answer.length} chars)`);
 
       return {
         answer,
@@ -84,7 +94,7 @@ export class RAGAgent {
       };
 
     } catch (error) {
-      console.error('[RAGAgent] Error during execution:', error);
+      console.error('[RAG] ✗ Error:', error);
 
       return {
         answer: 'An error occurred while processing your request. Please try again.',
@@ -132,10 +142,10 @@ ${context}`;
       new HumanMessage(query),
     ];
 
+    console.log(`[RAG] → Calling OpenAI LLM (gpt-4o-mini)...`);
     const response = await this.llm.invoke(messages);
     const answer = response.content as string;
-
-    console.log('[RAGAgent] Answer generated successfully');
+    console.log(`[RAG] ✓ LLM response received`);
 
     return answer;
   }

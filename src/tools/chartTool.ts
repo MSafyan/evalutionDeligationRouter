@@ -272,6 +272,11 @@ Input should be the user's query describing what kind of chart they want.`,
  * Standalone function for direct chart generation (non-LangChain)
  */
 export function generateChart(query: string): ChartToolResult {
-  console.log(`[ChartTool] Generating chart for: "${query}"`);
-  return generateChartConfig(query);
+  console.log(`\n[Chart] ━━━ Chart Generation ━━━`);
+  console.log(`[Chart] Query: "${query}"`);
+  console.log(`[Chart] → Analyzing query for chart type...`);
+  const result = generateChartConfig(query);
+  console.log(`[Chart] ✓ Generated ${result.config.type} chart`);
+  console.log(`[Chart]   Title: ${result.description}`);
+  return result;
 }

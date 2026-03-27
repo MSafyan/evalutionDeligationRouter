@@ -101,14 +101,20 @@ export class DelegatingAgent {
    * Analyzes query and decides which tool(s) to invoke
    */
   private async routerNode(state: DelegatingAgentState): Promise<Partial<DelegatingAgentState>> {
-    console.log('[DelegatingAgent] Router analyzing query...');
+    console.log('\n[Router] ━━━ Analyzing Query ━━━');
+    console.log(`[Router] Query: "${state.query}"`);
 
     const query = state.query.toLowerCase();
 
     // Routing logic based on keywords and patterns
     const hasChartKeywords = /chart|graph|visuali[sz]ation|visuali[sz]e|plot|diagram|show.*data|create.*chart|create.*graph/i.test(state.query);
-    const hasDataKeywords = /what|how|when|where|why|explain|tell me|information|analyze/i.test(state.query);
+    const hasDataKeywords = /what|which|how|when|where|why|explain|tell me|information|analyze/i.test(state.query);
     const hasSalesKeywords = /sales|revenue|q1|q2|q3|q4|quarter|product|category/i.test(state.query);
+
+    console.log(`[Router] → Keyword analysis:`);
+    console.log(`[Router]   Chart keywords: ${hasChartKeywords ? '✓' : '✗'}`);
+    console.log(`[Router]   Data keywords: ${hasDataKeywords ? '✓' : '✗'}`);
+    console.log(`[Router]   Sales keywords: ${hasSalesKeywords ? '✓' : '✗'}`);
 
     let decision: 'rag' | 'chart' | 'direct' | 'rag_and_chart';
 
@@ -118,27 +124,27 @@ export class DelegatingAgent {
     // Combined: Explicitly asking for both data AND visualization
     if (hasAndCombination && hasChartKeywords && (hasDataKeywords || hasSalesKeywords)) {
       decision = 'rag_and_chart';
-      console.log('[DelegatingAgent] Routing to: RAG + Chart (combined)');
+      console.log('[Router] ✓ Decision: RAG + Chart (parallel)');
     }
     // Chart only: Pure visualization request
     else if (hasChartKeywords) {
       decision = 'chart';
-      console.log('[DelegatingAgent] Routing to: Chart tool');
+      console.log('[Router] ✓ Decision: Chart tool');
     }
     // RAG: Question about data in knowledge base
     else if (hasDataKeywords && hasSalesKeywords) {
       decision = 'rag';
-      console.log('[DelegatingAgent] Routing to: RAG agent');
+      console.log('[Router] ✓ Decision: RAG agent (data + sales)');
     }
     // Check if it's likely in our knowledge base (science, tech, history topics)
     else if (/photosynthesis|plant|leaf|chlorophyll|ai|artificial intelligence|neural network|internet|technology/i.test(state.query)) {
       decision = 'rag';
-      console.log('[DelegatingAgent] Routing to: RAG agent (topic match)');
+      console.log('[Router] ✓ Decision: RAG agent (topic match)');
     }
     // Direct answer: Simple questions, math, greetings
     else {
       decision = 'direct';
-      console.log('[DelegatingAgent] Routing to: Direct answer');
+      console.log('[Router] ✓ Decision: Direct answer (LLM)');
     }
 
     return { routingDecision: decision };
@@ -198,13 +204,18 @@ export class DelegatingAgent {
    * Executes both RAG and Chart in parallel for combined queries
    */
   private async ragAndChartNode(state: DelegatingAgentState): Promise<Partial<DelegatingAgentState>> {
-    console.log('[DelegatingAgent] Executing RAG + Chart in parallel...');
+    console.log('\n[Parallel] ━━━ RAG + Chart (Parallel) ━━━');
+    console.log('[Parallel] → Starting both tools simultaneously...');
 
     // Execute both in parallel
+    const startTime = Date.now();
     const [ragResult, chartResult] = await Promise.all([
       ragAgent.execute(state.query),
       Promise.resolve(generateChart(state.query)),
     ]);
+    const elapsed = Date.now() - startTime;
+
+    console.log(`[Parallel] ✓ Both completed in ${elapsed}ms`);
 
     return {
       ragAnswer: ragResult.answer,

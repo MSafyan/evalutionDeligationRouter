@@ -47,7 +47,11 @@ export class WeaviateService {
    */
   async vectorSearch(query: string, limit: number = 3): Promise<RAGResult[]> {
     try {
-      console.log(`[WeaviateService] Searching for: "${query}"`);
+      console.log(`[Weaviate] → Vector search initiated`);
+      console.log(`[Weaviate]   Query: "${query}"`);
+      console.log(`[Weaviate]   Tenant: ${TENANT_NAME}`);
+      console.log(`[Weaviate]   Limit: ${limit}`);
+      console.log(`[Weaviate] → Calling OpenAI embeddings API...`);
 
       const result = await this.client.graphql
         .get()
@@ -58,10 +62,13 @@ export class WeaviateService {
         .withLimit(limit)
         .do();
 
+      console.log(`[Weaviate] ✓ Embeddings generated`);
+
       const objects = result.data?.Get?.QnADocument || [];
+      console.log(`[Weaviate] → Retrieved ${objects.length} results from DB`);
 
       if (objects.length === 0) {
-        console.log('[WeaviateService] No results found');
+        console.log('[Weaviate] ✗ No results found');
         return [];
       }
 
@@ -69,11 +76,15 @@ export class WeaviateService {
       // In cosine distance: 0 = identical, 2 = opposite
       // We want distance < (1 - SIMILARITY_THRESHOLD)
       const maxDistance = 1 - SIMILARITY_THRESHOLD;
+      console.log(`[Weaviate] → Filtering by similarity threshold (${SIMILARITY_THRESHOLD})`);
 
       const filteredResults: RAGResult[] = objects
         .filter((obj: any) => {
           const distance = obj._additional?.distance || 0;
-          return distance <= maxDistance;
+          const similarity = 1 - distance;
+          const passes = distance <= maxDistance;
+          console.log(`[Weaviate]   FileId ${obj.fileId}: similarity=${similarity.toFixed(3)} ${passes ? '✓' : '✗'}`);
+          return passes;
         })
         .map((obj: any) => ({
           fileId: obj.fileId,
@@ -82,7 +93,7 @@ export class WeaviateService {
           distance: obj._additional?.distance,
         }));
 
-      console.log(`[WeaviateService] Found ${filteredResults.length} relevant results (above ${SIMILARITY_THRESHOLD} similarity)`);
+      console.log(`[Weaviate] ✓ Filtered to ${filteredResults.length} relevant results`);
 
       return filteredResults;
 
