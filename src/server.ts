@@ -170,7 +170,7 @@ app.listen(PORT, () => {
   console.log('🚀 Multi-Agent RAG System Server');
   console.log('='.repeat(80));
   console.log(`\n📍 Server running on http://localhost:${PORT}`);
-  console.log('\n📡 Available endpoints:`);
+  console.log('\n📡 Available endpoints:');
   console.log(`   - POST http://localhost:${PORT}/api/chat/stream (SSE)`);
   console.log(`   - POST http://localhost:${PORT}/api/chat`);
   console.log(`   - GET  http://localhost:${PORT}/api/health`);
